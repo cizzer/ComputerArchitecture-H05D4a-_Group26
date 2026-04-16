@@ -1,0 +1,137 @@
+// module: Control
+// Function: Generates the control signals for each one of the datapath resources
+
+module control_unit(
+      input  wire [6:0] opcode,
+      output reg  [1:0] alu_op,
+      output reg        reg_dst,
+      output reg        branch,
+      output reg        mem_read,
+      output reg        mem_2_reg,
+      output reg        mem_write,
+      output reg        alu_src,
+      output reg        reg_write,
+      output reg        jump
+   );
+
+   // RISC-V opcode[6:0] (see RISC-V greensheet)
+   parameter integer ALU_R      = 7'b0110011;
+   parameter integer ALU_I      = 7'b0010011;
+   parameter integer BRANCH_EQ  = 7'b1100011;
+   parameter integer JUMP       = 7'b1101111;
+   parameter integer LOAD       = 7'b0000011;
+   parameter integer STORE      = 7'b0100011;
+
+   // RISC-V ALUOp[1:0] (see book Figure 4.12)
+   parameter [1:0] ADD_OPCODE     = 2'b00;
+   parameter [1:0] SUB_OPCODE     = 2'b01;
+   parameter [1:0] R_TYPE_OPCODE  = 2'b10;
+
+   //The behavior of the control unit can be found in Chapter 4, Figure 4.18
+
+   always@(*)begin
+      // safe defaults
+      alu_op    = ADD_OPCODE;
+      reg_dst   = 1'b0;
+      branch    = 1'b0;
+      mem_read  = 1'b0;
+      mem_2_reg = 1'b0;
+      mem_write = 1'b0;
+      alu_src   = 1'b0;
+      reg_write = 1'b0;
+      jump      = 1'b0;
+
+
+      case(opcode)
+         ALU_R: begin
+            alu_src   = 1'b0;
+            mem_2_reg = 1'b0;
+            reg_write = 1'b1;
+            mem_read  = 1'b0;
+            mem_write = 1'b0;
+            branch    = 1'b0;
+            alu_op    = R_TYPE_OPCODE;
+            jump      = 1'b0;
+            reg_dst   = 1'b1;   // only if reg_dst is actually used
+         end
+         
+         ALU_I: begin   // ADDI
+            alu_src   = 1'b1;
+            mem_2_reg = 1'b0;
+            reg_write = 1'b1;
+            mem_read  = 1'b0;
+            mem_write = 1'b0;
+            branch    = 1'b0;
+            alu_op    = ADD_OPCODE;
+            jump      = 1'b0;
+            reg_dst   = 1'b1;
+         end
+
+         LOAD: begin    // LD
+            alu_src   = 1'b1;
+            mem_2_reg = 1'b1;
+            reg_write = 1'b1;
+            mem_read  = 1'b1;
+            mem_write = 1'b0;
+            branch    = 1'b0;
+            alu_op    = ADD_OPCODE;
+            jump      = 1'b0;
+            reg_dst   = 1'b1;
+         end
+
+         
+         STORE: begin   // SD
+            alu_src   = 1'b1;
+            mem_2_reg = 1'b0;   // don't care
+            reg_write = 1'b0;
+            mem_read  = 1'b0;
+            mem_write = 1'b1;
+            branch    = 1'b0;
+            alu_op    = ADD_OPCODE;
+            jump      = 1'b0;
+            reg_dst   = 1'b0;   // don't care
+         end
+
+         BRANCH_EQ: begin   // BEQ
+            alu_src   = 1'b0;
+            mem_2_reg = 1'b0;   // don't care
+            reg_write = 1'b0;
+            mem_read  = 1'b0;
+            mem_write = 1'b0;
+            branch    = 1'b1;
+            alu_op    = SUB_OPCODE;
+            jump      = 1'b0;
+            reg_dst   = 1'b0;   // don't care
+         end
+
+
+         JUMP: begin   // JAL-style jump
+            alu_src   = 1'b0;
+            mem_2_reg = 1'b0;
+            reg_write = 1'b0;   // unless your datapath writes PC+4 to rd
+            mem_read  = 1'b0;
+            mem_write = 1'b0;
+            branch    = 1'b0;
+            alu_op    = ADD_OPCODE; // don't care
+            jump      = 1'b1;
+            reg_dst   = 1'b0;
+         end
+            // Declare the control signals for each one of the instructions here...
+
+         default:begin
+            alu_src   = 1'b0;
+            mem_2_reg = 1'b0;
+            reg_write = 1'b0;
+            mem_read  = 1'b0;
+            mem_write = 1'b0;
+            branch    = 1'b0;
+            alu_op    = R_TYPE_OPCODE;
+            jump      = 1'b0;
+         end
+      endcase
+   end
+
+endmodule
+
+
+

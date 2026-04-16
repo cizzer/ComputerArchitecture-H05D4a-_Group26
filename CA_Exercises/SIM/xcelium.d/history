@@ -1,0 +1,17 @@
+//
+// File created by:  xrun
+// Do not modify this file
+
+s1::(15Apr2026:13:49:35):( xrun +sv -64bit -f files_verilog.f -top cpu_tb -timescale 1ns/10ps -access +rwc -allowredefinition -linedebug -gui )
+s2::(15Apr2026:14:22:16):( xrun +sv -64bit -f files_verilog.f -top cpu_tb -timescale 1ns/10ps -access +rwc -allowredefinition -linedebug -gui )
+s3::(15Apr2026:14:45:04):( xrun +sv -64bit -f files_verilog.f -top cpu_tb -timescale 1ns/10ps -access +rwc -allowredefinition -linedebug -gui )
+s4::(15Apr2026:16:07:17):( xrun +sv -64bit -f files_verilog.f -top cpu_tb -timescale 1ns/10ps -access +rwc -allowredefinition -linedebug -gui )
+s5::(15Apr2026:16:27:24):( xrun +sv -64bit -f files_verilog.f -top cpu_tb -timescale 1ns/10ps -access +rwc -allowredefinition )
+s6::(15Apr2026:17:03:59):( xrun +sv -64bit -f files_verilog.f -top cpu_tb -timescale 1ns/10ps -access +rwc -allowredefinition )
+s7::(15Apr2026:17:23:15):( xrun +sv -64bit -f files_verilog.f -top cpu_tb -timescale 1ns/10ps -access +rwc -allowredefinition )
+s8::(15Apr2026:17:35:30):( xrun +sv -64bit -f files_verilog.f -top cpu_tb -timescale 1ns/10ps -access +rwc -allowredefinition )
+s9::(15Apr2026:17:36:51):( xrun +sv -64bit -f files_verilog.f -top cpu_tb -timescale 1ns/10ps -access +rwc -allowredefinition )
+s10::(16Apr2026:15:16:27):( xrun +sv -64bit -f files_verilog.f -top cpu_tb -timescale 1ns/10ps -access +rwc -allowredefinition )
+s11::(16Apr2026:15:20:40):( xrun +sv -64bit -f files_verilog.f -top cpu_tb -timescale 1ns/10ps -access +rwc -allowredefinition )
+s12::(16Apr2026:15:23:25):( xrun +sv -64bit -f files_verilog.f -top cpu_tb -timescale 1ns/10ps -access +rwc -allowredefinition )
+s13::(16Apr2026:15:25:55):( xrun +sv -64bit -f files_verilog.f -top cpu_tb -timescale 1ns/10ps -access +rwc -allowredefinition )

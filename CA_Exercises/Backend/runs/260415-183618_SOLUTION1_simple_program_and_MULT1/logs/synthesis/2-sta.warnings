@@ -1,0 +1,3 @@
+[WARNING ODB-0220] WARNING (LEFPARS-2036): SOURCE statement is obsolete in version 5.6 and later.
+To avoid this warning in the future, remove this statement from the LEF file with version 5.6 or later. See file /users/students/r1076233/Downloads/CA_Exercise_2026/CA_Exercise_Group26/CA_Exercises/Backend/runs/260415-183618_SOLUTION1_simple_program_and_MULT1/tmp/merged.nom.lef at line 930.
+[WARNING] Did not save OpenROAD database!

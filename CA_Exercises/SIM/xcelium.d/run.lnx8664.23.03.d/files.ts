@@ -1,0 +1,14 @@
+1776345115 /users/students/r1076233/Downloads/CA/ComputerArchitecture-H05D4a-_Group26/CA_Exercises/Verilog/RTL/alu.v
+1776344802 /users/students/r1076233/Downloads/CA/ComputerArchitecture-H05D4a-_Group26/CA_Exercises/Verilog/RTL/alu_control.v
+1776265788 /users/students/r1076233/Downloads/CA/ComputerArchitecture-H05D4a-_Group26/CA_Exercises/Verilog/RTL/branch_unit.v
+1776345924 /users/students/r1076233/Downloads/CA/ComputerArchitecture-H05D4a-_Group26/CA_Exercises/Verilog/RTL/control_unit.v
+1776266612 /users/students/r1076233/Downloads/CA/ComputerArchitecture-H05D4a-_Group26/CA_Exercises/Verilog/RTL/cpu.v
+1776265784 /users/students/r1076233/Downloads/CA/ComputerArchitecture-H05D4a-_Group26/CA_Exercises/Verilog/RTL/immediate_extend_unit.v
+1772452409 /users/students/r1076233/Downloads/CA/ComputerArchitecture-H05D4a-_Group26/CA_Exercises/Verilog/RTL/mux_2.v
+1772452409 /users/students/r1076233/Downloads/CA/ComputerArchitecture-H05D4a-_Group26/CA_Exercises/Verilog/RTL/pc.v
+1772452409 /users/students/r1076233/Downloads/CA/ComputerArchitecture-H05D4a-_Group26/CA_Exercises/Verilog/RTL/register_file.v
+1772452409 /users/students/r1076233/Downloads/CA/ComputerArchitecture-H05D4a-_Group26/CA_Exercises/Verilog/RTL/reg_arstn.v
+1776265792 /users/students/r1076233/Downloads/CA/ComputerArchitecture-H05D4a-_Group26/CA_Exercises/Verilog/RTL/reg_arstn_en.v
+1772452409 /users/students/r1076233/Downloads/CA/ComputerArchitecture-H05D4a-_Group26/CA_Exercises/Verilog/RTL/sram.v
+1772452409 /users/students/r1076233/Downloads/CA/ComputerArchitecture-H05D4a-_Group26/CA_Exercises/Verilog/cpu_tb.v
+1772452409 /users/students/r1076233/Downloads/CA/ComputerArchitecture-H05D4a-_Group26/CA_Exercises/Verilog/sky130_sram_2rw.v
