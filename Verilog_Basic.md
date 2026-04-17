@@ -61,3 +61,64 @@ Session 2:
     * Seperate the signals between the stages
     * Introduce pipeline registers to cpu.v
 2) Obj-2 RTL sol4 hazard mult 3 
+
+
+Recall that for the case of compoennts within CPU
+
+module_name #( 
+   .PARAM_NAME(value)
+) instance_name(
+   .port_name(signal_name),
+   .another_port(another_signal)
+);
+
+in which:
+1) Module name == Hardware block you are writing to
+2) #(...) == Instantiate this module, but set its parameter(s) to these values
+3) instance_name == the name of this specific copy of the module.
+4) .port_name(signal_name) == This is named port connection syntax.
+
+Note that port name refers to itself and the signal name is the external wire that connects to it
+
+Also note that because then our data memory would only read/write 32 bits at a time and   CPU registers and ALU expect 64-bit values.
+
+Pro tip : the book chapter 4 294 is literally the answer for session 2
+
+also reg_arstn ==> always want the register to move forward every clock 
+and reg_arst_en if you want  to pause the register (Use this one pre data hazard)
+
+Note that in the modules the data_w = 16 is a declaration of parameters, default setting 
+
+in the CPU the TA use .DATA_W cuz override
+
+also data_w-1:0 means you need to know thw data_W before hand 
+
+also also you pipeline the output of the control!
+
+
+// QNA
+
+1) .waddr(instruction_IF_ID[11:7]) // the destination register of whatever instruction is currently in ID, not the destination register of the instruction that is currently finishing WB. meaning that A few cycles later, when instruction 1 reaches WB, the ID stage might already be looking at instruction 3. so we still have to pipeline it  
+2) Why pipeline control signals like jump, branch, reg_write, mem_read, mem_write, mem_2_reg that goes back? 
+    * “because they are from the later stage going back doesn’t require for it to be pipelined”
+    * They are decided in ID, but used later.
+
+A control signal must be pipelined until the stage where it is actually used.
+
+Read ports
+
+Belong to ID
+
+raddr_1
+raddr_2
+rdata_1
+rdata_2
+Write port
+
+Belongs to WB
+
+waddr
+wdata
+reg_write
+
+That is why reg_write must be pipelined all the way to WB.
