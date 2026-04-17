@@ -461,8 +461,6 @@ alu#(
 //                                                          EX/MEM
 //----------------------------------------------------------------------------------------------------------------------------
 
-// 7 INPUT 7 OUTPUT
-
 reg_arstn_en #(
    .DATA_W(1)
 ) Pipeline_EX_MEM_mem_read(
@@ -471,6 +469,16 @@ reg_arstn_en #(
    .en     (enable          ),
    .din    (mem_read_ID_EX),
    .dout   (mem_read_EX_MEM)
+);
+
+reg_arstn_en #(
+   .DATA_W(1)
+) Pipeline_EX_MEM_reg_write(
+   .clk    (clk             ),
+   .arst_n (arst_n          ),
+   .en     (enable          ),
+   .din    (reg_write_ID_EX),
+   .dout   (reg_write_EX_MEM)
 );
 
 reg_arstn_en #(
@@ -493,15 +501,6 @@ reg_arstn_en #(
    .dout   (mem_write_EX_MEM)
 );
 
-reg_arstn_en #(
-   .DATA_W(1)
-) Pipeline_EX_MEM_reg_write(
-   .clk    (clk             ),
-   .arst_n (arst_n          ),
-   .en     (enable          ),
-   .din    (reg_write_ID_EX),
-   .dout   (reg_write_EX_MEM)
-);
 
 reg_arstn_en #(
    .DATA_W(64)
