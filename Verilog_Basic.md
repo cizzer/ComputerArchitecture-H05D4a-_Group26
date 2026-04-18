@@ -82,6 +82,8 @@ Note that port name refers to itself and the signal name is the external wire th
 
 Also note that because then our data memory would only read/write 32 bits at a time and   CPU registers and ALU expect 64-bit values.
 
+# Session 2 Part 1
+
 Pro tip : the book chapter 4 294 is literally the answer for session 2
 
 also reg_arstn ==> always want the register to move forward every clock 
@@ -105,6 +107,11 @@ also also you pipeline the output of the control!
 
 A control signal must be pipelined until the stage where it is actually used.
 
+If a signal is generated in one stage and used in a later stage, it must be pipelined across every stage boundary in between.
+If it is used in the same stage where it is generated, it does not need pipelining.
+
+Generate here, use there, pipeline between.
+
 Read ports
 
 Belong to ID
@@ -122,3 +129,14 @@ wdata
 reg_write
 
 That is why reg_write must be pipelined all the way to WB.
+
+# Session 2 Part 2 
+
+A forwarding unit exists because in a pipelined CPU, an instruction may need a value before that value has been written back to the register file. 
+So instead of waiting for the register file to be updated, you bypass the fresh result directly from a later pipeline stage back into EX.
+
+The two main ways to handle data hazards
+1) Forwarding [Done]
+2) Stalling [No Need for control hazards!]
+
+Hazard control is the logic that keeps the pipeline correct when overlapping instructions would otherwise use wrong data.

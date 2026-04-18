@@ -68,8 +68,9 @@ wire [31:0] instruction;      // current 32 bit instruction from ins mem
 //                                                 Wires : Control
 //----------------------------------------------------------------------------------------------------------------------------
 
-wire [1:0]  alu_op;           // coarse ALU operation from control unit
 wire [3:0]  alu_control;      // exact ALU command from ALU control
+
+wire [1:0]  alu_op;           // coarse ALU operation from control unit
 wire        reg_dst;          // register destination (unused in this datapath but kept for control unit compatibility)
 wire        branch;           // if 1 branch
 wire        mem_read;         // if 1 should read from data mem
@@ -79,6 +80,24 @@ wire        alu_src;          // if 0 ALU input comes from reg else from immedia
 wire        reg_write;        // if 1 reg write to rd
 wire        jump;             // if 1 jump
 
+// Additional wire for hazard
+
+wire        if_id_write_wire; // Either continue or no
+wire        pc_write_wire;    // Either write or no
+wire        flush_wire;       // Either flush or no
+
+// Get muxed
+
+wire [1:0]  muxed_alu_op;           // coarse ALU operation from control unit
+wire        muxed_reg_dst;          // register destination (unused in this datapath but kept for control unit compatibility)
+wire        muxed_branch;           // if 1 branch
+wire        muxed_mem_read;         // if 1 should read from data mem
+wire        muxed_mem_2_reg;        // if 1 write memory data 2 reg else ALU result back
+wire        muxed_mem_write;        // if 1 write to data memory
+wire        muxed_alu_src;          // if 0 ALU input comes from reg else from immediate
+wire        muxed_reg_write;        // if 1 reg write to rd
+wire        muxed_jump;             // if 1 jump
+
 //----------------------------------------------------------------------------------------------------------------------------
 //                                                 Wires : Register files
 //----------------------------------------------------------------------------------------------------------------------------
@@ -86,14 +105,20 @@ wire        jump;             // if 1 jump
 wire [63:0] regfile_wdata;    // the actual value written back
 wire [63:0] regfile_rdata_1;  // first value read from reg
 wire [63:0] regfile_rdata_2;  // second value read from reg
-
+wire [4:0] raddr_1_ID_EX;  // raddr1
+wire [4:0] raddr_2_ID_EX;  // raddr2
 //----------------------------------------------------------------------------------------------------------------------------
 //                                                 Wires : ALU Path
 //----------------------------------------------------------------------------------------------------------------------------
 
 wire [63:0] alu_out;          // ALU output
 wire [63:0] alu_operand_2;    // actual second input of ALU after mux
-wire        zero_flag;        // Becomes 1 when the ALU result is zero 
+wire        zero_flag;        // Becomes 1 when the ALU result is zero
+wire [63:0] mux_a_wire;       // connecting mux_a with alu
+wire [63:0] mux_b_wire;       // connecting mux_b with mux_2
+wire [63:0] mux_c_wire;       // connecting mux_2 with alu
+wire [1:0]  forwardA_wire;     // Connecting FWU with MUX3
+wire [1:0]  forwardB_wire;     // Connecting FWU with MUX3 
 
 //----------------------------------------------------------------------------------------------------------------------------
 //                                                 Wires : Memory Path
@@ -113,6 +138,7 @@ wire signed [63:0] immediate_extended; // sign extended immediate
 
 wire [31:0] instruction_IF_ID; // instruction after IF/ID pipeline register
 wire [63:0] current_pc_IF_ID;  // current PC after IF/ID pipeline register
+
 
 //----------------------------------------------------------------------------------------------------------------------------
 //                                                 Wires : Pipeline ID/EX
@@ -174,7 +200,7 @@ pc #(
    .branch    (branch_ID_EX   ), //INPUT
    .jump      (jump_ID_EX     ), //INPUT
    .current_pc(current_pc     ), //OUTPUT
-   .enable    (enable         ),
+   .enable    (enable && pc_write_wire), // Now it is linked with the hazard ctr
    .updated_pc(updated_pc     )  //OUTPUT
 );
 
@@ -205,7 +231,7 @@ reg_arstn_en #(
 ) Pipeline_IF_ID_current_pc(
    .clk    (clk             ),
    .arst_n (arst_n          ),
-   .en     (enable          ),
+   .en     (enable && if_id_write_wire),
    .din    (current_pc     ),
    .dout   (current_pc_IF_ID)
 );
@@ -216,7 +242,7 @@ reg_arstn_en #(
 ) Pipeline_IF_ID_instr(
    .clk    (clk             ),
    .arst_n (arst_n          ),
-   .en     (enable          ),
+   .en     (enable && if_id_write_wire),
    .din    (instruction     ),
    .dout   (instruction_IF_ID)
 );
@@ -257,12 +283,109 @@ immediate_extend_unit immediate_extend_u(
     .immediate_extended  (immediate_extended)
 );
 
+hazard_ctrl hazard_ctrl( // Hazard control unit
+   .raddr_1       (instruction_IF_ID[19:15]), //INPUT
+   .raddr_2       (instruction_IF_ID[24:20]), //INPUT
+   .mem_read      (mem_read_ID_EX), //INPUT
+   .rd            (rd_ID_EX), //INPUT
+   .pc_write      (pc_write_wire), //OUTPUT
+   .if_id_write   (if_id_write_wire), //OUTPUT
+   .flush         (flush_wire) //OUTPUT
+); 
+
+// When flushing we should flush all control signals!!!!!!!!!!
+
+mux_2 #(
+   .DATA_W(2)
+) mux_flush_alu_op ( // mux that decides whether to flush or not
+   .input_a (2'b00), // INPUT
+   .input_b (alu_op), // INPUT
+   .select_a(flush_wire), // INPUT
+   .mux_out (muxed_alu_op)  // OUTPUT
+);
+
+mux_2 #(
+   .DATA_W(1)
+) mux_flush_reg_dst ( // mux that decides whether to flush or not
+   .input_a (1b'0), // INPUT
+   .input_b (reg_dst), // INPUT
+   .select_a(flush_wire), // INPUT
+   .mux_out (muxed_reg_dst)  // OUTPUT
+);
+
+mux_2 #(
+   .DATA_W(1)
+) mux_flush_branch ( // mux that decides whether to flush or not
+   .input_a (1'b0), // INPUT
+   .input_b (branch), // INPUT
+   .select_a(flush_wire), // INPUT
+   .mux_out (muxed_branch)  // OUTPUT
+);
+
+mux_2 #(
+   .DATA_W(1)
+) mux_flush_mem_read ( // mux that decides whether to flush or not
+   .input_a (1'b0), // INPUT
+   .input_b (mem_read), // INPUT
+   .select_a(flush_wire), // INPUT
+   .mux_out (muxed_mem_read)  // OUTPUT
+);
+
+mux_2 #(
+   .DATA_W(1)
+) mux_flush_mem_2_reg ( // mux that decides whether to flush or not
+   .input_a (1'b0), // INPUT
+   .input_b (mem_2_reg), // INPUT
+   .select_a(flush_wire), // INPUT
+   .mux_out (muxed_mem_2_reg)  // OUTPUT
+);
+
+mux_2 #(
+   .DATA_W(1)
+) mux_flush_mem_write ( // mux that decides whether to flush or not
+   .input_a (1'b0), // INPUT
+   .input_b (mem_write), // INPUT
+   .select_a(flush_wire), // INPUT
+   .mux_out (muxed_mem_write)  // OUTPUT
+);
+
+mux_2 #(
+   .DATA_W(1)
+) mux_flush_alu_src ( // mux that decides whether to flush or not
+   .input_a (1'b0), // INPUT
+   .input_b (alu_src), // INPUT
+   .select_a(flush_wire), // INPUT
+   .mux_out (muxed_alu_src)  // OUTPUT
+);
+
+mux_2 #(
+   .DATA_W(1)
+) mux_flush_reg_write ( // mux that decides whether to flush or not
+   .input_a (1'b0), // INPUT
+   .input_b (reg_write), // INPUT
+   .select_a(flush_wire), // INPUT
+   .mux_out (muxed_reg_write)  // OUTPUT
+);
+
+mux_2 #(
+   .DATA_W(1)
+) mux_flush_jump ( // mux that decides whether to flush or not
+   .input_a (1'b0), // INPUT
+   .input_b (jump), // INPUT
+   .select_a(flush_wire), // INPUT
+   .mux_out (muxed_jump)  // OUTPUT
+);
+
+
+
+
 //----------------------------------------------------------------------------------------------------------------------------
 //                                                          ID/EX
 //----------------------------------------------------------------------------------------------------------------------------
 
 // 12 input 12 output
 
+// Controllsssss
 reg_arstn_en #(
    .DATA_W(64)
 ) Pipeline_ID_EX_current_pc(
@@ -279,7 +402,7 @@ reg_arstn_en #(
    .clk    (clk             ),
    .arst_n (arst_n          ),
    .en     (enable          ),
-   .din    (alu_op),
+   .din    (muxed_alu_op),
    .dout   (alu_op_ID_EX)
 );
 
@@ -289,7 +412,7 @@ reg_arstn_en #(
    .clk    (clk             ),
    .arst_n (arst_n          ),
    .en     (enable          ),
-   .din    (branch),
+   .din    (muxed_branch),
    .dout   (branch_ID_EX) // Branch and jump should be exectued in EX so I will just write it here
 );
 
@@ -299,7 +422,7 @@ reg_arstn_en #(
    .clk    (clk             ),
    .arst_n (arst_n          ),
    .en     (enable          ),
-   .din    (mem_read),
+   .din    (muxed_mem_read),
    .dout   (mem_read_ID_EX)
 );
 
@@ -309,7 +432,7 @@ reg_arstn_en #(
    .clk    (clk               ),
    .arst_n (arst_n            ),
    .en     (enable            ),
-   .din    (mem_2_reg         ),
+   .din    (muxed_mem_2_reg         ),
    .dout   (mem_2_reg_ID_EX   )
 );
 
@@ -319,7 +442,7 @@ reg_arstn_en #(
    .clk    (clk             ),
    .arst_n (arst_n          ),
    .en     (enable          ),
-   .din    (mem_write),
+   .din    (muxed_mem_write),
    .dout   (mem_write_ID_EX)
 );
 
@@ -329,7 +452,7 @@ reg_arstn_en #(
    .clk    (clk             ),
    .arst_n (arst_n          ),
    .en     (enable          ),
-   .din    (alu_src),
+   .din    (muxed_alu_src),
    .dout   (alu_src_ID_EX)
 );
 
@@ -339,7 +462,7 @@ reg_arstn_en #(
    .clk    (clk             ),
    .arst_n (arst_n          ),
    .en     (enable          ),
-   .din    (reg_write),
+   .din    (muxed_reg_write),
    .dout   (reg_write_ID_EX)
 );
 
@@ -349,7 +472,7 @@ reg_arstn_en #(
    .clk    (clk             ),
    .arst_n (arst_n          ),
    .en     (enable          ),
-   .din    (jump),
+   .din    (muxed_jump),
    .dout   (jump_ID_EX) // Branch and jump should be exectued in EX so I will just write it here
 );
 
@@ -415,6 +538,27 @@ reg_arstn_en #(
    .dout   (rd_ID_EX)
 );
 
+reg_arstn_en #(
+   .DATA_W(5)
+) Pipeline_raddr_1( // For the writeback of the address into register (Many mistakes were done here)
+   .clk    (clk             ),
+   .arst_n (arst_n          ),
+   .en     (enable          ),
+   .din    (instruction_IF_ID[19:15]),
+   .dout   (raddr_1_ID_EX)
+);
+
+reg_arstn_en #(
+   .DATA_W(5)
+) Pipeline_raddr_2( // For the writeback of the address into register (Many mistakes were done here)
+   .clk    (clk             ),
+   .arst_n (arst_n          ),
+   .en     (enable          ),
+   .din    (instruction_IF_ID[24:20]),
+   .dout   (raddr_2_ID_EX)
+);
+
+
 
 // ===========================================================================================================================
 //                                                 EX : Execute
@@ -430,13 +574,34 @@ branch_unit#(
    .jump_pc            (jump_pc                    ) // OUTPUT
 );
 
+mux_3 #(
+   .DATA_W(64)
+) mux_a (
+   .input_a (regfile_rdata_1_ID_EX     ), // INPUT
+   .input_b (regfile_wdata             ), // INPUT
+   .input_c (alu_out_EX_MEM            ), // INPUT
+   .select_a(forwardA_wire             ), // INPUT
+   .mux_out (mux_a_wire                )  // OUTPUT
+);
+
+mux_3 #(
+   .DATA_W(64)
+) mux_b (
+   .input_a (regfile_rdata_2_ID_EX  ), // INPUT
+   .input_b (regfile_wdata             ), // INPUT
+   .input_c (alu_out_EX_MEM            ), // INPUT
+   .select_a(forwardB_wire             ), // INPUT
+   .mux_out (mux_b_wire                )  // OUTPUT
+);
+
+
 mux_2 #(
    .DATA_W(64)
-) alu_operand_mux (
+) mux_c (
    .input_a (immediate_extended_ID_EX  ), // INPUT
-   .input_b (regfile_rdata_2_ID_EX     ), // INPUT
+   .input_b (mux_b_wire                ), // INPUT
    .select_a(alu_src_ID_EX             ), // INPUT
-   .mux_out (alu_operand_2             )  // OUTPUT
+   .mux_out (mux_c_wire             )  // OUTPUT
 );
 
 alu_control alu_ctrl(
@@ -449,17 +614,31 @@ alu_control alu_ctrl(
 alu#(
    .DATA_W(64)
 ) alu(
-   .alu_in_0 (regfile_rdata_1_ID_EX ), // INPUT
-   .alu_in_1 (alu_operand_2   ), // INPUT
+   .alu_in_0 (mux_a_wire ), // INPUT
+   .alu_in_1 (mux_c_wire   ), // INPUT
    .alu_ctrl (alu_control     ), // INPUT
    .alu_out  (alu_out         ), // OUTPUT
    .zero_flag(zero_flag       ), // OUTPUT
    .overflow (                ) // OUTPUT
 );
 
+fw_unit fw_unit(
+   .raddr_1_ID_EX       (raddr_1_ID_EX),     // INPUT
+   .raddr_2_ID_EX       (raddr_2_ID_EX),     // INPUT
+   .reg_write_EX_MEM    (reg_write_EX_MEM),  // INPUT
+   .reg_write_MEM_WB    (reg_write_MEM_WB),  // INPUT
+   .rd_EX_MEM           (rd_EX_MEM),         // INPUT
+   .rd_MEM_WB           (rd_MEM_WB),          // INPUT
+   .forwardA            (forwardA_wire),     // OUTPUT
+   .forwardB            (forwardB_wire)      // OUTPUT
+);
+
+
 //----------------------------------------------------------------------------------------------------------------------------
 //                                                          EX/MEM
 //----------------------------------------------------------------------------------------------------------------------------
+
+// 7 INPUT 7 OUTPUT
 
 reg_arstn_en #(
    .DATA_W(1)
@@ -469,16 +648,6 @@ reg_arstn_en #(
    .en     (enable          ),
    .din    (mem_read_ID_EX),
    .dout   (mem_read_EX_MEM)
-);
-
-reg_arstn_en #(
-   .DATA_W(1)
-) Pipeline_EX_MEM_reg_write(
-   .clk    (clk             ),
-   .arst_n (arst_n          ),
-   .en     (enable          ),
-   .din    (reg_write_ID_EX),
-   .dout   (reg_write_EX_MEM)
 );
 
 reg_arstn_en #(
@@ -501,6 +670,15 @@ reg_arstn_en #(
    .dout   (mem_write_EX_MEM)
 );
 
+reg_arstn_en #(
+   .DATA_W(1)
+) Pipeline_EX_MEM_reg_write(
+   .clk    (clk             ),
+   .arst_n (arst_n          ),
+   .en     (enable          ),
+   .din    (reg_write_ID_EX),
+   .dout   (reg_write_EX_MEM)
+);
 
 reg_arstn_en #(
    .DATA_W(64)
