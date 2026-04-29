@@ -696,8 +696,8 @@ reg_arstn_en #(
    .clk    (clk             ),
    .arst_n (arst_n          ),
    .en     (enable          ),
-   .din    (mux_b_wire),
-   .dout   (regfile_rdata_2_ID_EX)
+   .din    (regfile_rdata_2_ID_EX),
+   .dout   (regfile_rdata_2_EX_MEM)
 );
 
 reg_arstn_en #(

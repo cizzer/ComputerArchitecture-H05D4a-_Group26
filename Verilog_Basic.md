@@ -140,3 +140,15 @@ The two main ways to handle data hazards
 2) Stalling [No Need for control hazards!]
 
 Hazard control is the logic that keeps the pipeline correct when overlapping instructions would otherwise use wrong data.
+
+# Session 3 Part 1
+
+Basically we do the register file WB forwarding
+
+# Session 3 part 2 
+
+Control hazard (Fuck) handling for beq and jal
+
+# Session 3 part 3
+
+mult function 4
